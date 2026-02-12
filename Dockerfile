@@ -1,6 +1,6 @@
 # ApexNeural tracking microservice — production image.
 # Build: docker build -t apexneural-tracking .
-# Run: docker run -e DATABASE_URL=postgresql+asyncpg://... -p 8000:8000 apexneural-tracking
+# Run: docker run -e DATABASE_URL=postgresql+asyncpg://... -p 8054:8054 apexneural-tracking
 
 FROM python:3.12-slim AS builder
 
@@ -44,4 +44,4 @@ ENV HOST=0.0.0.0 \
 
 EXPOSE 8054
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8054"]
