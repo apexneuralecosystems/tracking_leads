@@ -40,8 +40,8 @@ ENV PATH="/home/app/.local/bin:$PATH"
 
 # All config via env (no hardcoded secrets)
 ENV HOST=0.0.0.0 \
-    PORT=8000
+    PORT=8054
 
-EXPOSE 8000
+EXPOSE 8054
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
