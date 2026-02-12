@@ -12,3 +12,6 @@ asyncpg>=0.29.0
 # Alembic (migrations; uses sync driver for CLI)
 alembic>=1.13.0
 psycopg[binary]>=3.2.0
+
+# Sync PostgreSQL (required when DATABASE_URL uses postgresql+psycopg2://)
+psycopg2-binary>=2.9.0
