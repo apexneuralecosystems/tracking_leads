@@ -29,8 +29,8 @@ class EventResponse(BaseModel):
 class LeadCreate(BaseModel):
     tracking_id: str = Field(..., min_length=1, max_length=128)
     email: str = Field(..., min_length=1, max_length=320)
-    first_name: str = Field("", max_length=256)
-    company: str = Field("", max_length=256)
+    first_name: str | None = Field(None, max_length=256)
+    company: str | None = Field(None, max_length=256)
 
 
 class LeadResponse(BaseModel):
