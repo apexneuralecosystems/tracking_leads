@@ -33,7 +33,7 @@ alembic upgrade head
 
 | Method | Path | Behavior |
 |--------|------|----------|
-| GET | `/leads` | Get all leads. Optional query: `?email=` or `?tracking_id=` to filter. |
+| GET | `/leads` | Get all leads. Optional: `?email=`, `?tracking_id=`, `?from_date=YYYY-MM-DD`, `?to_date=YYYY-MM-DD` (filter by created_at). |
 | GET | `/leads/{id}` | Get one lead by UUID. |
 | POST | `/leads` | Create lead: pass one of `lead_id` or `email`; optional: `campaign_name`. |
 | DELETE | `/leads/{id}` | Delete lead by UUID. |

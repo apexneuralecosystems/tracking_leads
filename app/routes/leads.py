@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import uuid
+from datetime import date, datetime, time, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -21,22 +22,39 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _date_start_utc(d: date) -> datetime:
+    return datetime.combine(d, time.min, tzinfo=timezone.utc)
+
+
+def _date_end_utc(d: date) -> datetime:
+    return datetime.combine(d, time(23, 59, 59, 999999), tzinfo=timezone.utc)
+
+
 @router.get(
     "/leads",
     response_model=list[LeadResponse],
     summary="Get all leads",
-    description="List all leads. Optionally filter by email or tracking_id (lead_id).",
+    description="List all leads. Optional filters: email, tracking_id, from_date, to_date (filter by created_at).",
 )
 async def list_leads(
     db: AsyncSession = Depends(get_db),
     email: str | None = Query(None, description="Filter by email"),
     tracking_id: str | None = Query(None, description="Filter by tracking_id (lead_id)"),
+    from_date: date | None = Query(None, description="Filter leads created on or after this date (YYYY-MM-DD)"),
+    to_date: date | None = Query(None, description="Filter leads created on or before this date (YYYY-MM-DD)"),
 ) -> list[LeadResponse]:
+    if from_date is not None and to_date is not None and from_date > to_date:
+        raise HTTPException(status_code=400, detail="from_date must be on or before to_date")
+
     q = select(Lead).order_by(Lead.created_at.desc())
     if email is not None and email.strip():
         q = q.where(Lead.email == email.strip())
     if tracking_id is not None and tracking_id.strip():
         q = q.where(Lead.tracking_id == tracking_id.strip())
+    if from_date is not None:
+        q = q.where(Lead.created_at >= _date_start_utc(from_date))
+    if to_date is not None:
+        q = q.where(Lead.created_at <= _date_end_utc(to_date))
     result = await db.execute(q)
     leads = result.scalars().all()
     return [LeadResponse.model_validate(lead) for lead in leads]
