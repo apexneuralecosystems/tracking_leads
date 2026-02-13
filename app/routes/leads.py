@@ -1,12 +1,14 @@
 """
-POST /leads — create lead; prevent duplicate tracking_id.
+Leads API: GET all, GET by id, GET by email/tracking_id, POST (lead_id OR email only one), DELETE.
 """
 
 from __future__ import annotations
 
 import logging
+import uuid
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,13 +24,39 @@ router = APIRouter()
 @router.get(
     "/leads",
     response_model=list[LeadResponse],
-    summary="List all leads with engagement",
-    description="Returns all leads with id, tracking_id, email, and opened/clicked timestamps.",
+    summary="Get all leads",
+    description="List all leads. Optionally filter by email or tracking_id (lead_id).",
 )
-async def list_leads(db: AsyncSession = Depends(get_db)) -> list[LeadResponse]:
-    result = await db.execute(select(Lead).order_by(Lead.created_at.desc()))
+async def list_leads(
+    db: AsyncSession = Depends(get_db),
+    email: str | None = Query(None, description="Filter by email"),
+    tracking_id: str | None = Query(None, description="Filter by tracking_id (lead_id)"),
+) -> list[LeadResponse]:
+    q = select(Lead).order_by(Lead.created_at.desc())
+    if email is not None and email.strip():
+        q = q.where(Lead.email == email.strip())
+    if tracking_id is not None and tracking_id.strip():
+        q = q.where(Lead.tracking_id == tracking_id.strip())
+    result = await db.execute(q)
     leads = result.scalars().all()
     return [LeadResponse.model_validate(lead) for lead in leads]
+
+
+@router.get(
+    "/leads/{lead_id}",
+    response_model=LeadResponse,
+    summary="Get lead by ID",
+    description="Get a single lead by UUID.",
+)
+async def get_lead_by_id(
+    lead_id: UUID,
+    db: AsyncSession = Depends(get_db),
+) -> LeadResponse:
+    result = await db.execute(select(Lead).where(Lead.id == lead_id))
+    lead = result.scalar_one_or_none()
+    if lead is None:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    return LeadResponse.model_validate(lead)
 
 
 @router.post(
@@ -36,25 +64,61 @@ async def list_leads(db: AsyncSession = Depends(get_db)) -> list[LeadResponse]:
     response_model=LeadResponse,
     status_code=201,
     summary="Create lead",
-    description="Create a lead. Returns 409 if tracking_id already exists.",
+    description="Create a lead. Pass exactly one of: lead_id (tracking_id) OR email. campaign_name optional. Returns 409 if lead_id/tracking_id or email already exists.",
 )
 async def create_lead(
     body: LeadCreate,
     db: AsyncSession = Depends(get_db),
 ) -> LeadResponse:
-    result = await db.execute(select(Lead).where(Lead.tracking_id == body.tracking_id))
+    if body.lead_id is not None and body.lead_id.strip():
+        tracking_id = body.lead_id.strip()
+        email = body.email or ""
+    else:
+        email = (body.email or "").strip()
+        tracking_id = uuid.uuid4().hex[:32]
+
+    result = await db.execute(select(Lead).where(Lead.tracking_id == tracking_id))
     existing = result.scalar_one_or_none()
     if existing:
         raise HTTPException(status_code=409, detail="Lead with this tracking_id already exists")
+    if email:
+        result = await db.execute(select(Lead).where(Lead.email == email))
+        if result.scalar_one_or_none():
+            raise HTTPException(status_code=409, detail="Lead with this email already exists")
 
     lead = Lead(
-        tracking_id=body.tracking_id,
-        email=body.email,
-        first_name=body.first_name or None,
-        company=body.company or None,
+        tracking_id=tracking_id,
+        campaign_name=body.campaign_name or None,
+        email=email,
+        first_name=None,
+        company=None,
     )
     db.add(lead)
     await db.commit()
     await db.refresh(lead)
-    logger.info("Lead created tracking_id=%s email=%s id=%s", body.tracking_id, body.email, lead.id)
+    logger.info(
+        "Lead created tracking_id=%s campaign_name=%s id=%s",
+        tracking_id,
+        body.campaign_name,
+        lead.id,
+    )
     return LeadResponse.model_validate(lead)
+
+
+@router.delete(
+    "/leads/{lead_id}",
+    status_code=204,
+    summary="Delete lead",
+    description="Delete a lead by UUID. Returns 404 if not found.",
+)
+async def delete_lead(
+    lead_id: UUID,
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    result = await db.execute(select(Lead).where(Lead.id == lead_id))
+    lead = result.scalar_one_or_none()
+    if lead is None:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    await db.delete(lead)
+    await db.commit()
+    logger.info("Lead deleted id=%s", lead_id)

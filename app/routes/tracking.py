@@ -76,6 +76,27 @@ async def track_open(
     return Response(content=TRACKING_PIXEL_BYTES, media_type="image/png")
 
 
+async def _record_click_and_redirect(
+    tracking_id: str,
+    campaign_name: str | None,
+    db: AsyncSession,
+) -> RedirectResponse:
+    event = Event(tracking_id=tracking_id, event_type="click")
+    db.add(event)
+    now = datetime.now(timezone.utc)
+    result = await db.execute(select(Lead).where(Lead.tracking_id == tracking_id))
+    lead = result.scalar_one_or_none()
+    if lead is not None:
+        if lead.first_click_at is None:
+            lead.first_click_at = now
+        if campaign_name and (lead.campaign_name is None or lead.campaign_name != campaign_name):
+            lead.campaign_name = campaign_name
+    await db.commit()
+    logger.info("Click recorded tracking_id=%s campaign_name=%s event_id=%s", tracking_id, campaign_name, event.id)
+    settings = get_settings()
+    return RedirectResponse(url=settings.redirect_base_url.rstrip("/"), status_code=302)
+
+
 @router.get(
     "/t/{tracking_id}",
     response_class=RedirectResponse,
@@ -87,17 +108,49 @@ async def track_click(
     tracking_id: str,
     db: AsyncSession = Depends(get_db),
 ) -> RedirectResponse:
-    # Store event before redirect so we never lose the click (e.g. if client doesn't follow redirect).
-    event = Event(tracking_id=tracking_id, event_type="click")
-    db.add(event)
-    now = datetime.now(timezone.utc)
-    result = await db.execute(select(Lead).where(Lead.tracking_id == tracking_id))
-    lead = result.scalar_one_or_none()
-    if lead is not None and lead.first_click_at is None:
-        lead.first_click_at = now
-    await db.commit()
-    logger.info("Click recorded tracking_id=%s event_id=%s", tracking_id, event.id)
+    return await _record_click_and_redirect(tracking_id, None, db)
 
-    settings = get_settings()
-    redirect_url = settings.redirect_base_url.rstrip("/")
-    return RedirectResponse(url=redirect_url, status_code=302)
+
+@router.get(
+    "/c/{campaign_name}/{tracking_id}",
+    response_class=RedirectResponse,
+    status_code=302,
+    summary="Tracking link with campaign (c)",
+    description="Record click with campaign name (e.g. meetapexneural.com/c/DubaiCamp/t124), then redirect.",
+)
+async def track_click_c(
+    campaign_name: str,
+    tracking_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> RedirectResponse:
+    return await _record_click_and_redirect(tracking_id, campaign_name, db)
+
+
+@router.get(
+    "/r/{campaign_name}/{tracking_id}",
+    response_class=RedirectResponse,
+    status_code=302,
+    summary="Tracking link with campaign (r)",
+    description="Record click with campaign name (e.g. meetapexneural.com/r/DubaiCamp/t124), then redirect.",
+)
+async def track_click_r(
+    campaign_name: str,
+    tracking_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> RedirectResponse:
+    return await _record_click_and_redirect(tracking_id, campaign_name, db)
+
+
+@router.get(
+    "/go/{campaign_name}/{tracking_id}",
+    response_class=RedirectResponse,
+    status_code=302,
+    summary="Tracking link with campaign (go)",
+    description="Record click with campaign name (e.g. meetapexneural.com/go/DubaiCamp/t124), then redirect.",
+)
+async def track_click_go(
+    campaign_name: str,
+    tracking_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> RedirectResponse:
+    return await _record_click_and_redirect(tracking_id, campaign_name, db)

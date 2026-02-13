@@ -22,6 +22,7 @@ class Lead(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tracking_id: Mapped[str] = mapped_column(String(128), unique=True, index=True, nullable=False)
+    campaign_name: Mapped[str | None] = mapped_column(String(256), index=True, nullable=True)
     email: Mapped[str] = mapped_column(String(320), index=True, nullable=False)
     first_name: Mapped[str | None] = mapped_column(String(256), nullable=True)
     company: Mapped[str | None] = mapped_column(String(256), nullable=True)

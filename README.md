@@ -17,7 +17,7 @@ FastAPI, PostgreSQL, async SQLAlchemy, Pydantic. All timestamps UTC.
 
 ## Database
 
-- **leads:** id, tracking_id (unique), email, first_name, company, created_at (UTC), opened_at (UTC, nullable), first_click_at (UTC, nullable)  
+- **leads:** id, tracking_id (unique), campaign_name (nullable), email, first_name, company, created_at (UTC), opened_at (UTC, nullable), first_click_at (UTC, nullable)  
 - **events:** id, tracking_id, event_type (`open` | `click`), created_at (UTC)  
 
 Migrations: Alembic. Run from project root:
@@ -33,10 +33,15 @@ alembic upgrade head
 
 | Method | Path | Behavior |
 |--------|------|----------|
-| GET | `/leads` | List all leads with engagement (id, tracking_id, email, opened_at, first_click_at). |
-| POST | `/leads` | Create lead (tracking_id, email, first_name, company). |
+| GET | `/leads` | Get all leads. Optional query: `?email=` or `?tracking_id=` to filter. |
+| GET | `/leads/{id}` | Get one lead by UUID. |
+| POST | `/leads` | Create lead: pass one of `lead_id` or `email`; optional: `campaign_name`. |
+| DELETE | `/leads/{id}` | Delete lead by UUID. |
 | GET | `/o/{tracking_id}.png` | Store first **open** per tracking_id (no duplicate opens), return 1×1 transparent PNG. No redirect. |
-| GET | `/t/{tracking_id}` | Store **click**, then redirect to `REDIRECT_BASE_URL` (default https://apexneural.com). Event stored before redirect. |
+| GET | `/t/{tracking_id}` | Store **click**, then redirect to `REDIRECT_BASE_URL`. |
+| GET | `/c/{campaign_name}/{tracking_id}` | Same as `/t/` but records campaign name (e.g. …/c/DubaiCamp/t124). |
+| GET | `/r/{campaign_name}/{tracking_id}` | Same as `/c/` (e.g. …/r/DubaiCamp/t124). |
+| GET | `/go/{campaign_name}/{tracking_id}` | Same as `/c/` (e.g. …/go/DubaiCamp/t124). |
 | POST | `/events` | Optional: log event (tracking_id, event_type open \| click). |
 
 ---
