@@ -61,13 +61,13 @@ Build and run (use env for `DATABASE_URL`; no secrets in image):
 
 ```bash
 docker build -t apexneural-tracking .
-docker run -e DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/db -p 8000:8000 apexneural-tracking
+docker run -e DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/db -p 8054:8054 apexneural-tracking
 ```
 
-Run migrations separately (same DB URL with `psycopg` for Alembic):
+**Migrations:** The image runs `alembic upgrade head` on startup (see `scripts/entrypoint.sh`), so the `leads` and `events` tables are created automatically. If you run the app without this entrypoint (e.g. custom CMD), run migrations manually:
 
 ```bash
-# Local or in a one-off container with DATABASE_URL set
+# One-off container or host with DATABASE_URL set
 alembic upgrade head
 ```
 
@@ -80,4 +80,19 @@ The `crm/` subfolder is excluded from the Docker build context (see `.dockerigno
 - **Tracking link:** Use  
   `https://your-domain/go/{{campaign_name}}/{{tracking_id}}`  
   (e.g. `https://meetapexneural.com/go/DubaiCamp/t124`). Click is logged with campaign name, then the user is redirected to `REDIRECT_BASE_URL`.
-# tracking_lads
+
+---
+
+## Test API (curl)
+
+Script that creates example leads and hits all endpoints:
+
+```bash
+# Default base: https://api.meetapexneural.com
+./scripts/test_api.sh
+
+# Or override:
+API_BASE_URL=https://api.meetapexneural.com ./scripts/test_api.sh
+```
+
+Requires `curl`. Optional: `jq` for get-by-id and delete tests using the created lead UUID.

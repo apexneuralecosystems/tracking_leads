@@ -29,12 +29,17 @@ app = FastAPI(
     description="Lead tracking: GET /go/{campaign_name}/{tracking_id} records click and redirects. Events stored in UTC.",
 )
 
+# CORS: from env CORS_ORIGINS ("*" or comma-separated list)
+_origins = ["*"]
+if getattr(settings, "cors_origins", "*") and settings.cors_origins.strip() != "*":
+    _origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 app.include_router(tracking.router, tags=["tracking"])

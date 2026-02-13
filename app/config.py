@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     # Click redirect: after GET /t/{tracking_id}, send user here (no path = homepage)
     redirect_base_url: str = "https://apexneural.com"
 
+    # CORS: comma-separated origins, or "*" to allow all
+    cors_origins: str = "*"
+
 
 def get_settings() -> Settings:
     return Settings()

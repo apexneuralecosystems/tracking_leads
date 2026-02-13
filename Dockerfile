@@ -33,7 +33,8 @@ RUN chown -R app:app /home/app/.local
 COPY alembic.ini .
 COPY alembic ./alembic
 COPY app ./app
-RUN chown -R app:app /app
+COPY scripts/entrypoint.sh /app/scripts/entrypoint.sh
+RUN chmod +x /app/scripts/entrypoint.sh && chown -R app:app /app
 
 USER app
 ENV PATH="/home/app/.local/bin:$PATH"
@@ -44,4 +45,5 @@ ENV HOST=0.0.0.0 \
 
 EXPOSE 8054
 
+ENTRYPOINT ["/app/scripts/entrypoint.sh"]
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8054"]
