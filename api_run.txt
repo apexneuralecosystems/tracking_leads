@@ -1,0 +1,25 @@
+=== 1. GET /health ===
+{"status":"ok"}
+HTTP 200
+
+=== 2. POST /leads (lead_id) ===
+{"id":"a664a549-3a95-4e42-9f29-3c2a7b1f0e1a","tracking_id":"run-py-001","campaign_name":"DubaiCamp","email":"","first_name":null,"company":null,"created_at":"2026-02-13T07:42:14.347270Z","opened_at":null,"first_click_at":null}
+
+HTTP 201
+
+=== 3. POST /leads (email) ===
+{"id":"65d403fe-1125-465e-8160-8f06538b7dfd","tracking_id":"86fee1e82573411c9999e03e8be4821f","campaign_name":"Webinar2025","email":"run-py@example.com","first_name":null,"company":null,"created_at":"2026-02-13T07:42:15.075515Z","opened_at":null,"first_click_at":null}
+
+HTTP 201
+
+=== 4. GET /leads ===
+[{"id":"65d403fe-1125-465e-8160-8f06538b7dfd","tracking_id":"86fee1e82573411c9999e03e8be4821f","campaign_name":"Webinar2025","email":"run-py@example.com","first_name":null,"company":null,"created_at":"2026-02-13T07:42:15.075515Z","opened_at":null,"first_click_at":null},{"id":"a664a549-3a95-4e42-9f29-3c2a7b1f0e1a","tracking_id":"run-py-001","campaign_name":"DubaiCamp","email":"","first_name":null,"company":null,"created_at":"2026-02-13T07:42:14.347270Z","opened_at":null,"first_click_at":null},{"id":"6a63c6ec-d64d-49af-b7d9-90f56d6f9e32","tracking_id":"001","campaign_name":"dubai","email":"","first_name":null,"company":null,"created_at":"2026-02-13T07:34:49.054177Z","opened_at":null,"first_click_at":"2026-02-13T07:35:12.742161Z"}]
+
+HTTP 200
+
+=== 5. POST /events ===
+{"id":"a62ff8fb-12b8-47f2-8173-3946ea6f8920","tracking_id":"run-py-001","event_type":"open","created_at":"2026-02-13T07:42:16.454334Z"}
+ HTTP 201
+
+=== 6. GET /go (redirect) ===
+HTTP 403

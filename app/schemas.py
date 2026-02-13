@@ -43,14 +43,14 @@ class LeadCreate(BaseModel):
 
 
 class LeadResponse(BaseModel):
+    """Lead API response. Excludes first_name and company. first_click_at = when they clicked the link."""
+
     id: UUID
     tracking_id: str
     campaign_name: str | None = None
     email: str
-    first_name: str | None
-    company: str | None
     created_at: datetime
     opened_at: datetime | None = None
-    first_click_at: datetime | None = None
+    first_click_at: datetime | None = None  # when they clicked the tracking link
 
     model_config = {"from_attributes": True}

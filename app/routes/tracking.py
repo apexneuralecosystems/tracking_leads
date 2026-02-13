@@ -26,7 +26,13 @@ router = APIRouter()
     response_class=RedirectResponse,
     status_code=302,
     summary="Tracking link",
-    description="Record click with campaign name, then redirect to REDIRECT_BASE_URL (e.g. meetapexneural.com/go/DubaiCamp/t124).",
+    description=(
+        "Record click with campaign name, then redirect to REDIRECT_BASE_URL. "
+        "Use the lead's **tracking_id** (e.g. '001', 'run-py-001'), NOT the lead's UUID id. "
+        "Example: /go/dubai/001. "
+        "Swagger 'Execute' may show 'Failed to fetch' (browser blocks cross-origin redirect); test in address bar or with curl."
+    ),
+    responses={302: {"description": "Redirect to REDIRECT_BASE_URL"}},
 )
 async def track_click(
     campaign_name: str,
