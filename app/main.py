@@ -26,7 +26,7 @@ logging.basicConfig(
 
 app = FastAPI(
     title=settings.app_name,
-    description="Minimal email engagement: open pixel GET /o/{id}.png, click link GET /t/{id} → redirect. Events stored in UTC.",
+    description="Lead tracking: GET /go/{campaign_name}/{tracking_id} records click and redirects. Events stored in UTC.",
 )
 
 app.add_middleware(
@@ -42,6 +42,6 @@ app.include_router(events.router, tags=["events"])
 app.include_router(leads.router, tags=["leads"])
 
 
-@app.get("/healthz")
-async def healthz() -> dict[str, str]:
+@app.get("/health")
+async def health() -> dict[str, str]:
     return {"status": "ok"}

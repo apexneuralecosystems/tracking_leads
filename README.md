@@ -37,11 +37,7 @@ alembic upgrade head
 | GET | `/leads/{id}` | Get one lead by UUID. |
 | POST | `/leads` | Create lead: pass one of `lead_id` or `email`; optional: `campaign_name`. |
 | DELETE | `/leads/{id}` | Delete lead by UUID. |
-| GET | `/o/{tracking_id}.png` | Store first **open** per tracking_id (no duplicate opens), return 1×1 transparent PNG. No redirect. |
-| GET | `/t/{tracking_id}` | Store **click**, then redirect to `REDIRECT_BASE_URL`. |
-| GET | `/c/{campaign_name}/{tracking_id}` | Same as `/t/` but records campaign name (e.g. …/c/DubaiCamp/t124). |
-| GET | `/r/{campaign_name}/{tracking_id}` | Same as `/c/` (e.g. …/r/DubaiCamp/t124). |
-| GET | `/go/{campaign_name}/{tracking_id}` | Same as `/c/` (e.g. …/go/DubaiCamp/t124). |
+| GET | `/go/{campaign_name}/{tracking_id}` | **Only tracking endpoint.** Record click with campaign name, then redirect to `REDIRECT_BASE_URL` (e.g. …/go/DubaiCamp/t124). |
 | POST | `/events` | Optional: log event (tracking_id, event_type open \| click). |
 
 ---
@@ -57,7 +53,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 - API: http://localhost:8000  
 - Docs: http://localhost:8000/docs  
-- Health: http://localhost:8000/healthz  
+- Health: http://localhost:8000/health  
 
 ### Docker
 
@@ -79,13 +75,9 @@ The `crm/` subfolder is excluded from the Docker build context (see `.dockerigno
 
 ---
 
-## Instantly usage
+## Usage
 
-- **Open tracking:** In your email HTML, add  
-  `<img src="https://apexneural.com/o/{{tracking_id}}.png" width="1" height="1" alt="" />`  
-  (Use your merge field for `tracking_id`.)
-
-- **Click tracking:** Use link  
-  `https://apexneural.com/t/{{tracking_id}}`  
-  so each recipient has a unique link; click is logged then they are redirected to your site.
+- **Tracking link:** Use  
+  `https://your-domain/go/{{campaign_name}}/{{tracking_id}}`  
+  (e.g. `https://meetapexneural.com/go/DubaiCamp/t124`). Click is logged with campaign name, then the user is redirected to `REDIRECT_BASE_URL`.
 # tracking_lads
