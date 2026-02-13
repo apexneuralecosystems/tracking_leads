@@ -188,6 +188,8 @@ All timestamps are ISO 8601 with Z (UTC). UUIDs are standard UUID v4 strings.
 
 **Response:** `302 Found` with header `Location: <REDIRECT_BASE_URL>`. No JSON body; browser or client should follow redirect.
 
+**Behavior:** If no lead exists with this `tracking_id`, a new lead is created (tracking_id, campaign_name, first_click_at). If a lead exists, first_click_at and campaign_name are updated. Click event is always recorded.
+
 **Note:** Testing from Swagger may show “Failed to fetch” (browser/CORS on redirect). Test in browser address bar or with `curl -I "https://api.meetapexneural.com/go/dubai/001"`.
 
 ---

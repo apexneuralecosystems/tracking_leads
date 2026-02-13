@@ -1,5 +1,6 @@
 """
 Single tracking endpoint: GET /go/{campaign_name}/{tracking_id} — record click, then redirect.
+Creates a new lead if none exists (lead_id + campaign + first_click_at from URL).
 """
 
 from __future__ import annotations
@@ -28,7 +29,7 @@ router = APIRouter()
     summary="Tracking link",
     description=(
         "Record click with campaign name, then redirect to REDIRECT_BASE_URL. "
-        "Use the lead's **tracking_id** (e.g. '001', 'run-py-001'), NOT the lead's UUID id. "
+        "If no lead exists with this tracking_id, a new lead is created (tracking_id, campaign_name, first_click_at). "
         "Example: /go/dubai/001. "
         "Swagger 'Execute' may show 'Failed to fetch' (browser blocks cross-origin redirect); test in address bar or with curl."
     ),
@@ -44,7 +45,16 @@ async def track_click(
     now = datetime.now(timezone.utc)
     result = await db.execute(select(Lead).where(Lead.tracking_id == tracking_id))
     lead = result.scalar_one_or_none()
-    if lead is not None:
+    if lead is None:
+        lead = Lead(
+            tracking_id=tracking_id,
+            campaign_name=campaign_name or None,
+            email="",
+            first_click_at=now,
+        )
+        db.add(lead)
+        logger.info("Lead created from /go tracking_id=%s campaign_name=%s", tracking_id, campaign_name)
+    else:
         if lead.first_click_at is None:
             lead.first_click_at = now
         if campaign_name and (lead.campaign_name is None or lead.campaign_name != campaign_name):
